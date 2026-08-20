@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/api/feed.ics", "destination": "/api/feed" }
+  ]
+}
