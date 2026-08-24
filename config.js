@@ -33,7 +33,7 @@ export const CONFIG = {
  footerNote: "Data is shared & live for everyone with this link · tracking Montana's 2027 legislative session from run-up through adjournment",
 
   // ---- .ics export ------------------------------------------------------
-  icsCalName: "Montana — Notable Events"
+  icsCalName: "Montana — Notable Events",
   icsFileName: "Montana_Notable_Events_2027.ics",
   icsProdId: "-//Montana Notable Events//EN",
 
