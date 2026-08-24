@@ -481,6 +481,29 @@ function buildIcs() {
   lines.push('END:VCALENDAR');
   return lines.join('\r\n');
 }
+// ----------------------------------------------------------------------
+// Subscribe (live feed) — copies a URL that calendar apps can be pointed
+// at ONCE; the calendar app then re-checks it on its own schedule and
+// pulls in new/changed events automatically. This is different from the
+// "Download .ics" button below, which only exports a snapshot of the
+// current events at the moment you click it.
+// ----------------------------------------------------------------------
+document.getElementById('btnSubscribe').onclick = async () => {
+  const feedUrl = window.location.origin + '/api/calendar.ics';
+  const statusEl = document.getElementById('statusMsg');
+  const originalText = statusEl.textContent;
+  try {
+    await navigator.clipboard.writeText(feedUrl);
+    statusEl.textContent = 'Feed link copied — add via "Subscribe by URL" in Google/Outlook/Apple Calendar';
+  } catch (e) {
+    // Clipboard API can be unavailable (older browser, permissions) — fall
+    // back to showing the URL directly so it's still usable.
+    window.prompt('Copy this link, then add it via "Subscribe by URL" in your calendar app:', feedUrl);
+    return;
+  }
+  setTimeout(() => { statusEl.textContent = originalText; }, 6000);
+};
+
 document.getElementById('btnExport').onclick = () => {
   const icsContent = buildIcs();
   const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
