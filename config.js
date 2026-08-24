@@ -6,7 +6,7 @@
 
 export const CONFIG = {
   // ---- Browser tab title -------------------------------------------------
-  pageTitle: pageTitle: "Montana — Notable Events",
+  pageTitle: "Montana — Notable Events",
 
   // ---- Header copy --------------------------------------------------------
   eyebrow: "Montana · 70th Legislature",
