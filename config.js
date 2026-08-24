@@ -47,8 +47,8 @@ export const CONFIG = {
   // meant to be exposed in client-side code — table-level security is
   // enforced by the Row Level Security policies in supabase/schema.sql,
   // not by hiding this key.
-  supabaseUrl: "https://YOUR-PROJECT-REF.supabase.co",
-  supabaseAnonKey: "YOUR-ANON-PUBLIC-KEY",
+  supabaseUrl: "https://fhcabftezttecpoekggh.supabase.co",
+  supabaseAnonKey: "sb_publishable_1tux1SjLBZLZJuRrESv8yA_CkK7PeHt",
 
   // ---- Visual theme (maps to CSS custom properties) --------------------
   theme: {
