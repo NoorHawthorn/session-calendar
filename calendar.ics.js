@@ -46,6 +46,10 @@ function buildIcs(events) {
     "VERSION:2.0",
     `PRODID:${ICS_PROD_ID}`,
     "CALSCALE:GREGORIAN",
+    // Explicitly marks this as a published/informational calendar (not a
+    // scheduling request/invite). Some clients — Outlook in particular —
+    // are more likely to reject a feed lacking this line.
+    "METHOD:PUBLISH",
     `X-WR-CALNAME:${ICS_CAL_NAME}`,
     // Hints some calendar clients (notably Apple Calendar) use to pace
     // re-checks. Not universally honored — Google/Outlook use their own
