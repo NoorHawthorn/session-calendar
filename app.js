@@ -7,7 +7,6 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { CONFIG } from './config.js';
-import { buildIcsString } from './ics.js';
 
 const supabase = createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
 const TABLE = 'events';
@@ -30,9 +29,11 @@ if (now0.getFullYear() > calYear || (now0.getFullYear() === calYear && now0.getM
   calYear = now0.getFullYear();
 }
 
+updateCountdown(); // set immediately so the widget is correct before data even loads
 loadEvents();
 subscribeRealtime();
 pollTimer = setInterval(loadEvents, 15000); // safety-net poll in case realtime drops
+setInterval(updateCountdown, 60000); // ticks the countdown/phase even between data reloads
 
 // ----------------------------------------------------------------------
 // Config → DOM
@@ -43,7 +44,6 @@ function applyConfigToPage() {
   document.getElementById('eyebrowText').textContent = CONFIG.eyebrow;
   document.getElementById('headingText').textContent = CONFIG.heading;
   document.getElementById('subText').textContent = CONFIG.subhead;
-  document.getElementById('countdownLabel').innerHTML = CONFIG.countdownLabel;
   document.getElementById('footerText').textContent = CONFIG.footerNote;
 
   const root = document.documentElement.style;
@@ -144,10 +144,31 @@ function fmtDateBlock(dateStr) {
 }
 
 function updateCountdown() {
-  const target = new Date(CONFIG.conveneDate + 'T00:00:00');
   const now = new Date();
-  const diff = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
-  document.getElementById('countdown').textContent = diff > 0 ? diff : '0';
+  const convene = new Date(CONFIG.conveneDate + 'T00:00:00');
+  const sessionEnd = CONFIG.sessionEndDate ? new Date(CONFIG.sessionEndDate + 'T00:00:00') : null;
+  const numEl = document.getElementById('countdown');
+  const labelEl = document.getElementById('countdownLabel');
+
+  // Phase 3: session has ended (only reachable if sessionEndDate is configured).
+  if (sessionEnd && now > sessionEnd) {
+    numEl.textContent = '0';
+    labelEl.innerHTML = CONFIG.sessionEndedLabel || 'session adjourned';
+    return;
+  }
+
+  // Phase 2: session is underway — count down to sessionEndDate instead of conveneDate.
+  if (sessionEnd && now >= convene) {
+    const diff = Math.ceil((sessionEnd - now) / (1000 * 60 * 60 * 24));
+    numEl.textContent = diff > 0 ? diff : '0';
+    labelEl.innerHTML = CONFIG.inSessionCountdownLabel || CONFIG.countdownLabel;
+    return;
+  }
+
+  // Phase 1 (default): counting down to conveneDate.
+  const diff = Math.ceil((convene - now) / (1000 * 60 * 60 * 24));
+  numEl.textContent = diff > 0 ? diff : '0';
+  labelEl.innerHTML = CONFIG.countdownLabel;
 }
 
 function renderLegend() {
@@ -249,7 +270,7 @@ function renderCalendar() {
         return `<div class="cal-ev" style="background:${color}" data-edit="${ev.id}" title="${escapeAttr(ev.name)}">${escapeHtml(ev.name)}</div>`;
       })
       .join('');
-    cells += `<div class="cal-cell ${isToday ? 'today' : ''}"><div class="dnum">${day}</div>${evHtml}</div>`;
+    cells += `<div class="cal-cell ${isToday ? 'today' : ''}" data-date="${dateKey}"><div class="dnum">${day}</div>${evHtml}</div>`;
   }
   const totalCells = startDow + daysInMonth;
   const remain = (7 - (totalCells % 7)) % 7;
@@ -267,8 +288,20 @@ function renderCalendar() {
   `;
   document.getElementById('calPrev').addEventListener('click', () => shiftMonth(-1));
   document.getElementById('calNext').addEventListener('click', () => shiftMonth(1));
+
+  // Clicking an event chip opens it for editing. stopPropagation keeps this
+  // click from also bubbling up to the day cell's "add event" handler below.
   container.querySelectorAll('[data-edit]').forEach(el => {
-    el.addEventListener('click', () => openEdit(el.getAttribute('data-edit')));
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      openEdit(el.getAttribute('data-edit'));
+    });
+  });
+
+  // Clicking anywhere else on an in-month day cell opens "Add event"
+  // pre-filled with that date.
+  container.querySelectorAll('.cal-cell[data-date]').forEach(cell => {
+    cell.addEventListener('click', () => openAdd(cell.getAttribute('data-date')));
   });
 }
 
@@ -317,11 +350,11 @@ const overlay = document.getElementById('overlay');
 document.getElementById('btnAdd').onclick = () => openAdd();
 document.getElementById('btnCancel').onclick = () => (overlay.style.display = 'none');
 
-function openAdd() {
+function openAdd(prefillDate) {
   document.getElementById('modalTitle').textContent = 'Add event';
   document.getElementById('editId').value = '';
   document.getElementById('fName').value = '';
-  document.getElementById('fDate').value = '';
+  document.getElementById('fDate').value = prefillDate || '';
   document.getElementById('fEndDate').value = '';
   document.getElementById('fCategory').value = Object.keys(CONFIG.categories)[0];
   document.getElementById('fStatus').value = 'Confirmed';
@@ -410,8 +443,46 @@ overlay.addEventListener('click', e => { if (e.target === overlay) overlay.style
 // ----------------------------------------------------------------------
 // ICS export (client-side snapshot of current events)
 // ----------------------------------------------------------------------
+function icsEscape(str) {
+  return (str || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+}
+function toIcsDate(dateStr) { return dateStr.replace(/-/g, ''); }
+function addDaysToDateStr(dateStr, n) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+function buildIcs() {
+  const now = new Date();
+  const stamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  let lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    `PRODID:${CONFIG.icsProdId}`,
+    'CALSCALE:GREGORIAN',
+    `X-WR-CALNAME:${CONFIG.icsCalName}`
+  ];
+  events.forEach(ev => {
+    const dtstart = toIcsDate(ev.date);
+    const dtendSource = ev.endDate ? addDaysToDateStr(ev.endDate, 1) : addDaysToDateStr(ev.date, 1);
+    const dtend = toIcsDate(dtendSource);
+    lines.push('BEGIN:VEVENT');
+    lines.push('UID:' + ev.id + '@session-calendar');
+    lines.push('DTSTAMP:' + stamp);
+    lines.push('DTSTART;VALUE=DATE:' + dtstart);
+    lines.push('DTEND;VALUE=DATE:' + dtend);
+    lines.push('SUMMARY:' + icsEscape('[' + ev.category.toUpperCase() + '] ' + ev.name));
+    let desc = ev.desc || '';
+    if (ev.status) desc += (desc ? ' ' : '') + '(Status: ' + ev.status + ')';
+    if (ev.src) desc += (desc ? ' ' : '') + 'Source: ' + ev.src;
+    if (desc) lines.push('DESCRIPTION:' + icsEscape(desc));
+    lines.push('END:VEVENT');
+  });
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n');
+}
 document.getElementById('btnExport').onclick = () => {
-  const icsContent = buildIcsString(events, CONFIG);
+  const icsContent = buildIcs();
   const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -421,43 +492,4 @@ document.getElementById('btnExport').onclick = () => {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-};
-
-// ----------------------------------------------------------------------
-// Subscribe (live feed) — distinct from the one-time export above. Points
-// calendar apps at api/feed.js, served at /api/feed.ics via the rewrite in
-// vercel.json, which regenerates the feed from Supabase on every request.
-// ----------------------------------------------------------------------
-function feedUrls() {
-  const https = window.location.origin + '/api/feed.ics';
-  const webcal = https.replace(/^https?:/, 'webcal:');
-  const google = 'https://www.google.com/calendar/render?cid=' + encodeURIComponent(webcal);
-  return { https, webcal, google };
-}
-
-document.getElementById('btnSubscribe').onclick = () => {
-  const { https, webcal, google } = feedUrls();
-  document.getElementById('feedUrlInput').value = https;
-  document.getElementById('appleCalLink').href = webcal;
-  document.getElementById('googleCalLink').href = google;
-  document.getElementById('subscribeOverlay').style.display = 'flex';
-};
-document.getElementById('btnSubscribeClose').onclick = () => {
-  document.getElementById('subscribeOverlay').style.display = 'none';
-};
-document.getElementById('subscribeOverlay').addEventListener('click', e => {
-  if (e.target.id === 'subscribeOverlay') document.getElementById('subscribeOverlay').style.display = 'none';
-});
-document.getElementById('btnCopyFeed').onclick = async () => {
-  const input = document.getElementById('feedUrlInput');
-  input.select();
-  try {
-    await navigator.clipboard.writeText(input.value);
-  } catch {
-    document.execCommand('copy');
-  }
-  const btn = document.getElementById('btnCopyFeed');
-  const original = btn.textContent;
-  btn.textContent = 'Copied!';
-  setTimeout(() => (btn.textContent = original), 1500);
 };

@@ -6,28 +6,37 @@
 
 export const CONFIG = {
   // ---- Browser tab title -------------------------------------------------
-  pageTitle: "MT 2027 Session Run-Up Calendar",
+  pageTitle: "All-In Energy406 — MT Session Calendar",
 
   // ---- Header copy --------------------------------------------------------
   eyebrow: "Montana · 70th Legislature",
-  heading: "Session Run-Up Calendar",
+  heading: "All-In Energy406",
   subhead:
-    "Every deadline, holiday, and gathering between now and the gavel — shared and editable by everyone with this link.",
+    "Session run-up and in-session calendar — every deadline, holiday, and gathering from now through sine die, shared and editable by everyone with this link.",
 
   // ---- Countdown widget -----------------------------------------------
-  // conveneDate must be an ISO date (YYYY-MM-DD). countdownLabel is the
-  // small caption under the number — HTML (e.g. <br>) is allowed.
+  // Three phases, switched automatically based on today's date:
+  //   1. Before conveneDate      -> counts down to conveneDate, shows countdownLabel
+  //   2. conveneDate..sessionEndDate -> counts down to sessionEndDate, shows inSessionCountdownLabel
+  //   3. After sessionEndDate    -> shows sessionEndedLabel, no countdown
+  // All *Date fields must be ISO dates (YYYY-MM-DD). Labels are the small
+  // caption under the number — HTML (e.g. <br>) is allowed. Leave
+  // sessionEndDate blank ("") to disable phase 2/3 and always count down
+  // to conveneDate (the old single-countdown behavior).
   conveneDate: "2027-01-04",
   countdownLabel: "days to convening<br>Jan 4, 2027",
+  sessionEndDate: "2027-04-30",
+  inSessionCountdownLabel: "days left in session<br>adjourns ~Apr 30, 2027 (est.)",
+  sessionEndedLabel: "session adjourned<br>sine die",
 
   // ---- Footer note ----------------------------------------------------
   footerNote:
-    "Data is shared & live for everyone with this link · built for tracking the run-up to the 2027 Montana legislative session",
+    "All-In Energy406 · data is shared & live for everyone with this link · tracking Montana's 2027 legislative session from run-up through adjournment",
 
   // ---- .ics export ------------------------------------------------------
-  icsCalName: "MT 2027 Legislative Session Run-Up",
-  icsFileName: "MT_2027_Session_Runup.ics",
-  icsProdId: "-//MT Session Run-Up Calendar//EN",
+  icsCalName: "All-In Energy406 — MT 2027 Legislative Session Calendar",
+  icsFileName: "AllInEnergy406_MT_2027_Session.ics",
+  icsProdId: "-//All-In Energy406 Session Calendar//EN",
 
   // ---- Calendar view: which month/year to open on first load ----------
   // month is 0-indexed (0 = January, 8 = September).
@@ -38,8 +47,8 @@ export const CONFIG = {
   // meant to be exposed in client-side code — table-level security is
   // enforced by the Row Level Security policies in supabase/schema.sql,
   // not by hiding this key.
-  supabaseUrl: "https://fhcabftezttecpoekggh.supabase.co",
-  supabaseAnonKey: "sb_publishable_1tux1SjLBZLZJuRrESv8yA_CkK7PeHt",
+  supabaseUrl: "https://YOUR-PROJECT-REF.supabase.co",
+  supabaseAnonKey: "YOUR-ANON-PUBLIC-KEY",
 
   // ---- Visual theme (maps to CSS custom properties) --------------------
   theme: {

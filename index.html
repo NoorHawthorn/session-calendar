@@ -135,6 +135,8 @@
   }
   .cal-dow{background:var(--navy);color:var(--paper);text-align:center;font-family:'IBM Plex Mono';font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:8px 0;}
   .cal-cell{background:var(--paper);min-height:96px;padding:6px;position:relative;}
+  .cal-cell:not(.out){cursor:pointer;transition:background .12s ease;}
+  .cal-cell:not(.out):hover{background:rgba(184,134,46,0.08);}
   .cal-cell.out{background:#EEEAE0;}
   .cal-cell .dnum{font-family:'IBM Plex Mono';font-size:11px;color:#8A8371;}
   .cal-cell.today .dnum{color:var(--gold);font-weight:700;}
@@ -160,13 +162,6 @@
 
   .empty{text-align:center;padding:60px 20px;color:#8A8371;}
   footer{text-align:center;padding:30px 0 10px;font-size:11px;color:#9a9484;font-family:'IBM Plex Mono';}
-
-  .modal-help{font-size:12px;color:#4B463C;line-height:1.5;margin:0 0 14px;}
-  .modal-help.small{font-size:11px;color:#7A7364;margin:12px 0 0;}
-  .url-row{display:flex;gap:8px;}
-  .url-row input{flex:1;font-family:'IBM Plex Mono',monospace;font-size:12px;}
-  .subscribe-quick{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 4px;}
-  .subscribe-quick .btn{text-decoration:none;display:inline-block;}
 
   @media (max-width:600px){
     header.top .inner{flex-direction:column;align-items:flex-start;}
@@ -204,7 +199,6 @@
     <div style="display:flex;gap:10px;align-items:center;">
       <span class="status" id="statusMsg">loading…</span>
       <button class="btn ghost" id="btnExport">⬇ Download .ics</button>
-      <button class="btn ghost" id="btnSubscribe">🔗 Subscribe</button>
       <button class="btn" id="btnAdd">+ Add event</button>
     </div>
   </div>
@@ -266,34 +260,6 @@
       <div style="display:flex;gap:10px;margin-left:auto;">
         <button class="btn ghost" id="btnCancel">Cancel</button>
         <button class="btn" id="btnSave">Save</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="overlay" id="subscribeOverlay" style="display:none;">
-  <div class="modal">
-    <h3>Subscribe to this calendar</h3>
-    <p class="modal-help">
-      Subscribing links a calendar app to a live feed, so it updates itself automatically as events are added, edited, or removed — unlike "Download .ics," which is a one-time snapshot. Most apps re-check the feed every few hours, not instantly.
-    </p>
-    <div class="field">
-      <label>Feed URL</label>
-      <div class="url-row">
-        <input type="text" id="feedUrlInput" readonly>
-        <button class="btn small" id="btnCopyFeed">Copy</button>
-      </div>
-    </div>
-    <div class="subscribe-quick">
-      <a class="btn ghost small" id="appleCalLink" href="#">🍎 Apple Calendar</a>
-      <a class="btn ghost small" id="googleCalLink" href="#" target="_blank" rel="noopener">📅 Google Calendar</a>
-    </div>
-    <p class="modal-help small">
-      Outlook or another app: look for "Subscribe from web" / "Add calendar by URL" and paste the feed URL above.
-    </p>
-    <div class="modal-actions">
-      <div style="display:flex;margin-left:auto;">
-        <button class="btn ghost" id="btnSubscribeClose">Close</button>
       </div>
     </div>
   </div>
