@@ -6,11 +6,11 @@
 
 export const CONFIG = {
   // ---- Browser tab title -------------------------------------------------
-  pageTitle: "All-In Energy406 — MT Session Calendar",
+  pageTitle: pageTitle: "Montana — Notable Events",
 
   // ---- Header copy --------------------------------------------------------
   eyebrow: "Montana · 70th Legislature",
-  heading: "All-In Energy406",
+  heading: "Montana — Notable Events",
   subhead:
     "Session run-up and in-session calendar — every deadline, holiday, and gathering from now through sine die, shared and editable by everyone with this link.",
 
@@ -30,13 +30,12 @@ export const CONFIG = {
   sessionEndedLabel: "session adjourned<br>sine die",
 
   // ---- Footer note ----------------------------------------------------
-  footerNote:
-    "All-In Energy406 · data is shared & live for everyone with this link · tracking Montana's 2027 legislative session from run-up through adjournment",
+ footerNote: "Data is shared & live for everyone with this link · tracking Montana's 2027 legislative session from run-up through adjournment",
 
   // ---- .ics export ------------------------------------------------------
-  icsCalName: "All-In Energy406 — MT 2027 Legislative Session Calendar",
-  icsFileName: "AllInEnergy406_MT_2027_Session.ics",
-  icsProdId: "-//All-In Energy406 Session Calendar//EN",
+  icsCalName: "Montana — Notable Events"
+  icsFileName: "Montana_Notable_Events_2027.ics",
+  icsProdId: "-//Montana Notable Events//EN",
 
   // ---- Calendar view: which month/year to open on first load ----------
   // month is 0-indexed (0 = January, 8 = September).
