@@ -452,6 +452,26 @@ function addDaysToDateStr(dateStr, n) {
   d.setDate(d.getDate() + n);
   return d.toISOString().slice(0, 10);
 }
+// RFC 5545 requires content lines to be folded at 75 octets, with each
+// continuation line starting with a single space. Long SUMMARY/DESCRIPTION
+// lines otherwise sit on one unfolded line — some calendar apps tolerate
+// that, but Outlook is known to be strict about it. Folds by character
+// count with a safety margin below 75 so multi-byte characters (e.g. em
+// dashes) don't push the actual byte count over the limit.
+function foldIcsLine(line) {
+  const SAFE_CHARS = 70;
+  if (line.length <= SAFE_CHARS) return line;
+  let result = '';
+  let rest = line;
+  let first = true;
+  while (rest.length > 0) {
+    const chunkLen = first ? SAFE_CHARS : SAFE_CHARS - 1; // continuation lines lose 1 char to the leading space
+    result += (first ? '' : '\r\n ') + rest.slice(0, chunkLen);
+    rest = rest.slice(chunkLen);
+    first = false;
+  }
+  return result;
+}
 function buildIcs() {
   const now = new Date();
   const stamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -460,6 +480,7 @@ function buildIcs() {
     'VERSION:2.0',
     `PRODID:${CONFIG.icsProdId}`,
     'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
     `X-WR-CALNAME:${CONFIG.icsCalName}`
   ];
   events.forEach(ev => {
@@ -479,7 +500,7 @@ function buildIcs() {
     lines.push('END:VEVENT');
   });
   lines.push('END:VCALENDAR');
-  return lines.join('\r\n');
+  return lines.map(foldIcsLine).join('\r\n');
 }
 // ----------------------------------------------------------------------
 // Subscribe (live feed) — copies a URL that calendar apps can be pointed
@@ -489,7 +510,7 @@ function buildIcs() {
 // current events at the moment you click it.
 // ----------------------------------------------------------------------
 document.getElementById('btnSubscribe').onclick = async () => {
-  const feedUrl = window.location.origin + '/api/calendar.ics';
+  const feedUrl = window.location.origin + '/api/calendar';
   const statusEl = document.getElementById('statusMsg');
   const originalText = statusEl.textContent;
   try {
